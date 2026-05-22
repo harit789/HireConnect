@@ -1,0 +1,139 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: user-service-auth
+          uri: lb://user-service
+          predicates:
+            - Path=/api/auth/**, /api/profile/**
+          filters:
+            - name: AuthFilter
+              args:
+                secured: false
+
+        - id: user-service-oauth
+          uri: lb://user-service
+          predicates:
+            - Path=/login/oauth2/**, /oauth2/**
+          filters:
+            - PreserveHostHeader
+            - name: AuthFilter
+              args:
+                secured: false
+
+        - id: user-service-secured
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - AuthFilter
+
+        - id: user-service-uploads
+          uri: lb://user-service
+          predicates:
+            - Path=/uploads/**
+          filters:
+            - name: AuthFilter
+              args:
+                secured: false
+
+        - id: user-service-admin
+          uri: lb://user-service
+          predicates:
+            - Path=/api/admin/**
+          filters:
+            - AuthFilter
+
+        - id: job-service
+          uri: lb://job-service
+          predicates:
+            - Path=/api/jobs/**, /api/applications/**
+          filters:
+            - AuthFilter
+
+        - id: interview-notification-service
+          uri: lb://interview-notification-service
+          predicates:
+            - Path=/api/interviews/**, /api/notifications/**, /api/messages/**
+          filters:
+            - AuthFilter
+
+        - id: subscription-analytics-service
+          uri: lb://subscription-analytics-service
+          predicates:
+            - Path=/api/subscriptions/**, /api/analytics/**
+          filters:
+            - AuthFilter
+
+        - id: user-service-docs
+          uri: lb://user-service
+          predicates:
+            - Path=/user-service/api-docs
+          filters:
+            - RewritePath=/user-service/api-docs, /api-docs
+
+        - id: job-service-docs
+          uri: lb://job-service
+          predicates:
+            - Path=/job-service/api-docs
+          filters:
+            - RewritePath=/job-service/api-docs, /api-docs
+
+        - id: interview-service-docs
+          uri: lb://interview-notification-service
+          predicates:
+            - Path=/interview-service/api-docs
+          filters:
+            - RewritePath=/interview-service/api-docs, /api-docs
+
+        - id: subscription-service-docs
+          uri: lb://subscription-analytics-service
+          predicates:
+            - Path=/subscription-service/api-docs
+          filters:
+            - RewritePath=/subscription-service/api-docs, /api-docs
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL}/eureka/       
+  instance:
+    hostname: ${RENDER_EXTERNAL_HOSTNAME:localhost}  
+    prefer-ip-address: false                         
+
+jwt:
+  secret: ${JWT_SECRET}                         
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: User Service
+        url: /user-service/api-docs
+      - name: Job Service
+        url: /job-service/api-docs
+      - name: Interview & Notification Service
+        url: /interview-service/api-docs
+      - name: Subscription & Analytics Service
+        url: /subscription-service/api-docs
+  api-docs:
+    enabled: false
